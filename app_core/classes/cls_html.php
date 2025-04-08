@@ -6,7 +6,7 @@ class cls_Html {
      * @return string Etiqueta script
      */
     public function html_js_header(string $script_path): string {
-        return "<script src='{$script_path}'></script>\n";
+        return "<script defer src='{$script_path}'></script>\n";
     }
     
     /**

@@ -35,3 +35,35 @@ ALTER TABLE tbl_songs
 ADD CONSTRAINT fk_songs_users
 FOREIGN KEY (user_id) REFERENCES tbl_users(id)
 ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Crear tabla de comentarios
+CREATE TABLE tbl_comments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    song_id INT NOT NULL,
+    user_id INT NOT NULL,
+    comment TEXT NOT NULL,
+    created_at DATETIME NOT NULL,
+    FOREIGN KEY (song_id) REFERENCES tbl_songs(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES tbl_users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
+
+-- Crear tabla para las notificaciones
+CREATE TABLE tbl_notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT 0,
+    created_at DATETIME NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES tbl_users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
+
+
+-- Mas datos 
+INSERT INTO tbl_users (username, password, full_name, email, profile_image, created_at) 
+VALUES ('zeus', 'e10adc3949ba59abbe56e057f20f883e', 'Zeus', 'zeus@musicapp.com', 'default_profile.jpg', NOW());
+
+INSERT INTO tbl_users (username, password, full_name, email, profile_image, created_at) 
+VALUES ('poseidon', 'e10adc3949ba59abbe56e057f20f883e', 'poseidon', 'poseidon@musicapp.com', 'default_profile.jpg', NOW());
+
+INSERT INTO tbl_users (username, password, full_name, email, profile_image, created_at) 
+VALUES ('seth', 'e10adc3949ba59abbe56e057f20f883e', 'seth', 'seth@musicapp.com', 'default_profile.jpg', NOW());

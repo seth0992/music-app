@@ -562,3 +562,139 @@
   opacity: 1;
   transform: scale(1.1);
 }
+
+/* Estilos para notificaciones */
+.notification-link {
+  position: relative;
+  margin: 0 15px;
+  color: white;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ff9a3c;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* Comentarios */
+.song-comments {
+  margin-top: 15px;
+  border-top: 1px solid #eee;
+  padding-top: 15px;
+}
+
+.comments-title {
+  font-size: 1.1em;
+  margin-bottom: 10px;
+  color: #555;
+}
+
+.comment-form {
+  margin-bottom: 15px;
+}
+
+.comment-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.comment-button {
+  background: #8e44ad;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 20px;
+  margin-top: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  float: right;
+}
+
+.comment-button:hover {
+  background: #7d3c98;
+}
+
+.no-comments {
+  color: #999;
+  font-style: italic;
+  text-align: center;
+  margin: 15px 0;
+}
+
+.comment-item {
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.comment-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  margin-right: 10px;
+  object-fit: cover;
+}
+
+.comment-username {
+  font-weight: 600;
+  font-size: 0.9em;
+  margin-right: 10px;
+}
+
+.comment-date {
+  font-size: 0.8em;
+  color: #777;
+  margin-left: auto;
+}
+
+.comment-text {
+  color: #333;
+  font-size: 0.95em;
+  line-height: 1.4;
+}
+
+.delete-comment-form {
+  display: inline;
+  margin-left: 10px;
+}
+
+.delete-comment-button {
+  background: none;
+  border: none;
+  color: #e74c3c;
+  font-size: 0.85em;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.3s;
+}
+
+.delete-comment-button:hover {
+  opacity: 1;
+}
+
+.comments-list {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 5px;
+}

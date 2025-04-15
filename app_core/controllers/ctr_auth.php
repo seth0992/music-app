@@ -60,13 +60,20 @@ class ctr_Auth {
     }
     
     /**
+     * Obtiene el id actual del usuario
+     * @param int|null $user_id ID del usuario o null si no está autenticado
+     */
+    public function get_user_id(): ?int {
+        return $this->auth->get_user_id();
+    }
+
+    /**
      * Obtiene el nombre completo del usuario actual
      * @return string|null Nombre completo o null si no está autenticado
      */
     public function get_full_name(): ?string {
         return $this->auth->get_full_name();
     }
-    
     /**
      * Obtiene la imagen de perfil del usuario actual
      * @return string|null Imagen de perfil o null si no está autenticado

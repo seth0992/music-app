@@ -5,14 +5,17 @@
 require_once($_SERVER["DOCUMENT_ROOT"] . "/music-app/global.php");
 require_once(__CLS_PATH . "cls_music.php");
 
+require_once(__CTR_PATH . "ctr_notifications.php");
+
 class ctr_Music {
     private cls_Music $songdata;
-    
+    private ctr_Notifications $ctr_notifications;
     /**
      * Constructor del controlador
      */
     public function __construct() {
         $this->songdata = new cls_Music();
+        $this->ctr_notifications = new ctr_Notifications();
     }
     
     /**
@@ -64,6 +67,16 @@ class ctr_Music {
         }
         
         if ($this->songdata->insert_song($songdata)) {
+            // Enviar notificación al administrador (usuario ID 1)
+            if ($songdata['user_id'] != 1) {
+                $this->ctr_notifications->notify(
+                    1, // admin ID
+                    "Nuevo contenido agregado: " . $songdata['title'] . " por " . $songdata['artist'],
+                    "admin@musicapp.com", // Email del admin
+                    $_SESSION['FULLNAME'] // Nombre del usuario actual
+                );
+            }
+            
             cls_Message::show_message("Canción añadida correctamente", "success", "success_insert");
             return true;
         }

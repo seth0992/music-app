@@ -1,10 +1,14 @@
 <?php
 require_once($_SERVER["DOCUMENT_ROOT"] . "/music-app/global.php");
 require_once(__CLS_PATH . "cls_html.php");
-require(__CTR_PATH . "ctr_music.php"); 
+require(__CTR_PATH . "ctr_music.php");
+
+// Incluir controlador de comentarios
+require_once(__CTR_PATH . "ctr_comments.php");
+$ctr_Comments = new ctr_Comments();
 
 $HTML = new cls_Html();
-$ctr_Music = new ctr_Music(); 
+$ctr_Music = new ctr_Music();
 
 // Inicialización de variables
 $editMode = false;
@@ -12,7 +16,44 @@ $song = null;
 $searchResults = [];
 $isSearching = false;
 
-// Procesar eliminación
+// Procesar eliminación de comentario
+if (isset($_POST['btn_delete_comment']) && isset($_POST['hdn_comment_id'])) {
+    $commentId = (int)$_POST['hdn_comment_id'];
+    if ($ctr_Comments->delete_comment($commentId, $_SESSION['USER_ID'])) {
+        cls_Message::show_message("Comentario eliminado correctamente", "success", "");
+    } else {
+        cls_Message::show_message("No se pudo eliminar el comentario", "error", "");
+    }
+}
+
+// Procesar nuevo comentario
+foreach ($_POST as $key => $value) {
+    if (strpos($key, 'btn_comment') === 0 && isset($_POST['hdn_song_id'])) {
+        $songId = (int)$_POST['hdn_song_id'];
+        $commentKey = 'txt_comment_' . $songId;
+
+        if (isset($_POST[$commentKey]) && !empty($_POST[$commentKey])) {
+            $comment = htmlspecialchars(trim($_POST[$commentKey]), ENT_QUOTES, 'UTF-8');
+
+            if ($ctr_Comments->add_comment(
+                $songId,
+                $_SESSION['USER_ID'],
+                $comment,
+                $_SESSION['FULLNAME']
+            )) {
+                cls_Message::show_message("Comentario añadido correctamente", "success", "");
+
+                // Redirigir para evitar reenvío del formulario
+                header("Location: " . __SITE_PATH . "?commented=true");
+                exit;
+            } else {
+                cls_Message::show_message("No se pudo añadir el comentario", "error", "");
+            }
+        }
+    }
+}
+
+// Procesar eliminación de canción
 if (isset($_POST['btn_delete'])) {
     $ctr_Music->btn_delete_click();
 }
@@ -57,7 +98,7 @@ if (isset($_POST['btn_save'])) {
 if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
     $songId = (int)$_GET['edit'];
     $song = $ctr_Music->get_song_by_id($songId);
-    
+
     if ($song) {
         $editMode = true;
     }
@@ -98,37 +139,37 @@ $genres = [
 
 <div id="form_box">
     <h2 class="section-title"><?php echo $editMode ? 'Editar Canción' : '¿Qué canción estás escuchando?'; ?></h2>
-    
+
     <form id="frm_song" method="post" action="">
         <?php if ($editMode && $song): ?>
             <?php echo $HTML->html_hidden('hdn_id', 'hdn_id', $song['id']); ?>
         <?php endif; ?>
-        
+
         <div class="form-group">
             <label for="txt_title">Título:</label>
             <?php echo $HTML->html_input_text('text', 'txt_title', 'txt_title', 'form-control', $editMode && $song ? $song['title'] : '', 'Título de la canción', 'required'); ?>
         </div>
-        
+
         <div class="form-group">
             <label for="txt_artist">Artista:</label>
             <?php echo $HTML->html_input_text('text', 'txt_artist', 'txt_artist', 'form-control', $editMode && $song ? $song['artist'] : '', 'Nombre del artista o banda', 'required'); ?>
         </div>
-        
+
         <div class="form-group">
             <label for="sel_genre">Género:</label>
             <?php echo $HTML->html_select('sel_genre', 'sel_genre', 'form-control', $genres, $editMode && $song ? $song['genre'] : '', 'required'); ?>
         </div>
-        
+
         <div class="form-group">
             <label for="txt_review">Reseña:</label>
             <?php echo $HTML->html_textarea('txt_review', 'txt_review', 'form-control', $editMode && $song ? $song['review'] : '', 'Escribe una breve reseña de la canción', 4, 'required'); ?>
         </div>
-        
+
         <div class="form-group">
             <label>Calificación:</label>
             <?php echo $HTML->html_rating_stars('rating', $editMode && $song ? $song['rating'] : 5, 'required'); ?>
         </div>
-        
+
         <div class="button-container">
             <?php if ($editMode): ?>
                 <button type="submit" name="btn_update" id="btn_update" class="button update-button">
@@ -150,97 +191,159 @@ $genres = [
     <h2 class="panel-title">Canciones Compartidas</h2>
 
     <?php
-        // Obtener canciones según si estamos buscando o no
-        $songs = $isSearching ? $searchResults : $ctr_Music->get_songs();
-        
-        if (empty($songs)) {
-            echo "<div class='no-songs'>
-                    <p>" . ($isSearching ? "No se encontraron resultados para tu búsqueda." : "No hay canciones compartidas aún. ¡Sé el primero en compartir!") . "</p>
-                    <div class='empty-icon'><i class='fas fa-music'></i></div>
-                  </div>";
-        } else {
-            foreach($songs as $song) {
-                $songId = (int)$song['id'];
-                $title = htmlspecialchars($song['title'], ENT_QUOTES, 'UTF-8');
-                $artist = htmlspecialchars($song['artist'], ENT_QUOTES, 'UTF-8');
-                $genre = htmlspecialchars($song['genre'], ENT_QUOTES, 'UTF-8');
-                $review = nl2br(htmlspecialchars($song['review'], ENT_QUOTES, 'UTF-8'));
-                $rating = (int)$song['rating'];
-                $userId = (int)$song['user_id'];
-                $username = htmlspecialchars($song['username'], ENT_QUOTES, 'UTF-8');
-                $fullName = htmlspecialchars($song['full_name'], ENT_QUOTES, 'UTF-8');
-                $profileImage = htmlspecialchars($song['profile_image'], ENT_QUOTES, 'UTF-8');
-                
-                // Formatear fecha para mostrar de manera más amigable
-                $createdAt = new DateTime($song['created_at']);
-                $formattedDate = $createdAt->format('d/m/Y H:i');
-                
-                // Mostrar estrellas según la calificación
-                $stars = '';
-                for ($i = 1; $i <= 5; $i++) {
-                    if ($i <= $rating) {
-                        $stars .= '<i class="fas fa-star filled"></i>';
-                    } else {
-                        $stars .= '<i class="far fa-star"></i>';
-                    }
+    // Obtener canciones según si estamos buscando o no
+    $songs = $isSearching ? $searchResults : $ctr_Music->get_songs();
+
+    if (empty($songs)) {
+        echo "<div class='no-songs'>
+            <p>" . ($isSearching ? "No se encontraron resultados para tu búsqueda." : "No hay canciones compartidas aún. ¡Sé el primero en compartir!") . "</p>
+            <div class='empty-icon'><i class='fas fa-music'></i></div>
+          </div>";
+    } else {
+        foreach ($songs as $song) {
+            $songId = (int)$song['id'];
+            $title = htmlspecialchars($song['title'], ENT_QUOTES, 'UTF-8');
+            $artist = htmlspecialchars($song['artist'], ENT_QUOTES, 'UTF-8');
+            $genre = htmlspecialchars($song['genre'], ENT_QUOTES, 'UTF-8');
+            $review = nl2br(htmlspecialchars($song['review'], ENT_QUOTES, 'UTF-8'));
+            $rating = (int)$song['rating'];
+            $userId = (int)$song['user_id'];
+            $username = htmlspecialchars($song['username'], ENT_QUOTES, 'UTF-8');
+            $fullName = htmlspecialchars($song['full_name'], ENT_QUOTES, 'UTF-8');
+            $profileImage = htmlspecialchars($song['profile_image'], ENT_QUOTES, 'UTF-8');
+
+            // Formatear fecha para mostrar de manera más amigable
+            $createdAt = new DateTime($song['created_at']);
+            $formattedDate = $createdAt->format('d/m/Y H:i');
+
+            // Mostrar estrellas según la calificación
+            $stars = '';
+            for ($i = 1; $i <= 5; $i++) {
+                if ($i <= $rating) {
+                    $stars .= '<i class="fas fa-star filled"></i>';
+                } else {
+                    $stars .= '<i class="far fa-star"></i>';
                 }
-                
-                // Convertir el género a texto legible
-                $genreText = $genres[$genre] ?? $genre;
-                
-                // Determinar si el usuario actual puede editar/eliminar esta canción
-                $canEdit = ($_SESSION['USER_ID'] == $userId);
-                $actionButtons = '';
-                
-                if ($canEdit) {
-                    $actionButtons = "
-                        <a href='" . __SITE_PATH . "?edit={$songId}' class='edit-button' title='Editar'><i class='fas fa-edit'></i></a>
-                        <form method='post' action='' class='delete-form' onsubmit='return confirm(\"¿Estás seguro de que deseas eliminar esta canción?\")'>
-                            <input type='hidden' name='hdn_id' value='{$songId}'>
-                            <button type='submit' name='btn_delete' class='delete-button' title='Eliminar'><i class='fas fa-trash'></i></button>
-                        </form>
-                    ";
-                }
-                
-                echo "<div class='song-block'>
-                        <div class='song-header'>
-                            <h3 class='song-title'>{$title}</h3>
-                            <div class='song-actions'>
-                                {$actionButtons}
-                            </div>
-                        </div>
-                        <div class='song-artist'><i class='fas fa-user'></i> {$artist}</div>
-                        <div class='song-info'>
-                            <span class='song-genre'><i class='fas fa-music'></i> {$genreText}</span>
-                            <span class='song-rating'>{$stars}</span>
-                        </div>
-                        <div class='song-review'>{$review}</div>
-                        <div class='song-details'>
-                            <div class='song-date'>Compartido: {$formattedDate}</div>
-                            <div class='song-publisher'>
-                                Por: <span class='publisher-name'>{$fullName}</span>
-                                <img src='" . __RSC_PHO_HOST_PATH . "{$profileImage}' alt='{$username}' class='publisher-avatar'>
-                            </div>
-                        </div>
-                      </div>";
             }
+
+            // Convertir el género a texto legible
+            $genreText = $genres[$genre] ?? $genre;
+
+            // Determinar si el usuario actual puede editar/eliminar esta canción
+            $canEdit = ($_SESSION['USER_ID'] == $userId);
+            $actionButtons = '';
+
+            if ($canEdit) {
+                $actionButtons = "
+                <a href='" . __SITE_PATH . "?edit={$songId}' class='edit-button' title='Editar'><i class='fas fa-edit'></i></a>
+                <form method='post' action='' class='delete-form' onsubmit='return confirm(\"¿Estás seguro de que deseas eliminar esta canción?\")'>
+                    <input type='hidden' name='hdn_id' value='{$songId}'>
+                    <button type='submit' name='btn_delete' class='delete-button' title='Eliminar'><i class='fas fa-trash'></i></button>
+                </form>
+            ";
+            }
+
+            // Primera parte del bloque de canción
+    ?>
+            <div class='song-block'>
+                <div class='song-header'>
+                    <h3 class='song-title'><?php echo $title; ?></h3>
+                    <div class='song-actions'>
+                        <?php echo $actionButtons; ?>
+                    </div>
+                </div>
+                <div class='song-artist'><i class='fas fa-user'></i> <?php echo $artist; ?></div>
+                <div class='song-info'>
+                    <span class='song-genre'><i class='fas fa-music'></i> <?php echo $genreText; ?></span>
+                    <span class='song-rating'><?php echo $stars; ?></span>
+                </div>
+                <div class='song-review'><?php echo $review; ?></div>
+                <div class='song-details'>
+                    <div class='song-date'>Compartido: <?php echo $formattedDate; ?></div>
+                    <div class='song-publisher'>
+                        Por: <span class='publisher-name'><?php echo $fullName; ?></span>
+                        <img src='<?php echo __RSC_PHO_HOST_PATH . $profileImage; ?>' alt='<?php echo $username; ?>' class='publisher-avatar'>
+                    </div>
+                </div>
+
+                <!-- Sección de comentarios -->
+                <div class='song-comments'>
+                    <h4 class='comments-title'>Comentarios</h4>
+
+                    <!-- Formulario para añadir comentario -->
+                    <form method="post" action="" class="comment-form">
+                        <input type="hidden" name="hdn_song_id" value="<?php echo $songId; ?>">
+                        <textarea name="txt_comment_<?php echo $songId; ?>" id="txt_comment_<?php echo $songId; ?>" class="comment-input" placeholder="Escribe un comentario..." rows="2" required></textarea>
+                        <button type="submit" name="btn_comment" id="btn_comment_<?php echo $songId; ?>" class="comment-button"><i class="fas fa-comment"></i> Comentar</button>
+                    </form>
+
+                    <!-- Mostrar comentarios existentes -->
+                    <?php
+                    // Cargar comentarios
+                    $comments = $ctr_Comments->get_comments($songId);
+
+                    if (empty($comments)) {
+                        echo '<p class="no-comments">No hay comentarios aún. ¡Sé el primero en comentar!</p>';
+                    } else {
+                        echo '<div class="comments-list">';
+                        foreach ($comments as $comment) {
+                            $commentId = (int)$comment['id'];
+                            $commentText = nl2br(htmlspecialchars($comment['comment'], ENT_QUOTES, 'UTF-8'));
+                            $commentDate = new DateTime($comment['created_at']);
+                            $formattedCommentDate = $commentDate->format('d/m/Y H:i');
+                            $commentUserId = (int)$comment['user_id'];
+                            $commentUserName = htmlspecialchars($comment['full_name'], ENT_QUOTES, 'UTF-8');
+                            $commentUserImage = htmlspecialchars($comment['profile_image'], ENT_QUOTES, 'UTF-8');
+                    ?>
+                            <div class="comment-item">
+                                <div class="comment-header">
+                                    <img src="<?php echo __RSC_PHO_HOST_PATH . $commentUserImage; ?>" alt="<?php echo $commentUserName; ?>" class="comment-avatar">
+                                    <span class="comment-username"><?php echo $commentUserName; ?></span>
+                                    <span class="comment-date"><?php echo $formattedCommentDate; ?></span>
+
+                                    <?php if ($_SESSION['USER_ID'] == $commentUserId): ?>
+                                        <form method="post" action="" class="delete-comment-form" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este comentario?');">
+                                            <input type="hidden" name="hdn_comment_id" value="<?php echo $commentId; ?>">
+                                            <button type="submit" name="btn_delete_comment" class="delete-comment-button" title="Eliminar comentario"><i class="fas fa-trash"></i></button>
+                                        </form>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="comment-text"><?php echo $commentText; ?></div>
+                            </div>
+                    <?php
+                        }
+                        echo '</div>';
+                    }
+                    ?>
+                </div>
+            </div>
+    <?php
         }
+    }
     ?>
 </div>
 
 <!-- Mensajes de alerta según la operación -->
 <?php if (isset($_GET['added'])): ?>
-<script>
-    $(document).ready(function() {
-        $("<div class='alert alert-success'>Canción añadida correctamente</div>").insertBefore("#songs_panel").fadeIn('slow').delay(5000).fadeOut('slow');
-    });
-</script>
+    <script>
+        $(document).ready(function() {
+            $("<div class='alert alert-success'>Canción añadida correctamente</div>").insertBefore("#songs_panel").fadeIn('slow').delay(5000).fadeOut('slow');
+        });
+    </script>
 <?php endif; ?>
 
 <?php if (isset($_GET['updated'])): ?>
-<script>
-    $(document).ready(function() {
-        $("<div class='alert alert-success'>Canción actualizada correctamente</div>").insertBefore("#songs_panel").fadeIn('slow').delay(5000).fadeOut('slow');
-    });
-</script>
+    <script>
+        $(document).ready(function() {
+            $("<div class='alert alert-success'>Canción actualizada correctamente</div>").insertBefore("#songs_panel").fadeIn('slow').delay(5000).fadeOut('slow');
+        });
+    </script>
+<?php endif; ?>
+
+<?php if (isset($_GET['commented'])): ?>
+    <script>
+        $(document).ready(function() {
+            $("<div class='alert alert-success'>Comentario añadido correctamente</div>").insertBefore("#songs_panel").fadeIn('slow').delay(5000).fadeOut('slow');
+        });
+    </script>
 <?php endif; ?>

@@ -14,9 +14,11 @@ class cls_Music {
      */
     public function get_songs(): array {
         $result = $this->data_provide->sql_execute(
-            "SELECT id, title, artist, genre, review, rating, created_at 
-             FROM tbl_songs 
-             ORDER BY id DESC"
+            "SELECT s.id, s.title, s.artist, s.genre, s.review, s.rating, s.created_at, 
+                    u.id as user_id, u.username, u.full_name, u.profile_image
+             FROM tbl_songs s
+             JOIN tbl_users u ON s.user_id = u.id 
+             ORDER BY s.id DESC"
         );
         
         if ($result === false) {
@@ -33,9 +35,11 @@ class cls_Music {
      */
     public function get_song_by_id(int $id): ?array {
         $result = $this->data_provide->sql_execute_prepared(
-            "SELECT id, title, artist, genre, review, rating, created_at 
-             FROM tbl_songs 
-             WHERE id = ?",
+            "SELECT s.id, s.title, s.artist, s.genre, s.review, s.rating, s.created_at, s.user_id,
+                    u.username, u.full_name, u.profile_image
+             FROM tbl_songs s
+             JOIN tbl_users u ON s.user_id = u.id
+             WHERE s.id = ?",
             "i",
             [$id]
         );
@@ -56,21 +60,22 @@ class cls_Music {
         // Verificar que tengamos todos los datos necesarios
         if (empty($songdata['title']) || empty($songdata['artist']) || 
             empty($songdata['genre']) || empty($songdata['review']) || 
-            empty($songdata['rating'])) {
+            empty($songdata['rating']) || empty($songdata['user_id'])) {
             return false;
         }
         
         // Usando consulta preparada para mayor seguridad
         return $this->data_provide->sql_execute_prepared_dml(
-            "INSERT INTO tbl_songs (title, artist, genre, review, rating, created_at) 
-             VALUES (?, ?, ?, ?, ?, ?)",
-            "ssssis",
+            "INSERT INTO tbl_songs (title, artist, genre, review, rating, user_id, created_at) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "ssssiis",
             [
                 $songdata['title'],
                 $songdata['artist'],
                 $songdata['genre'],
                 $songdata['review'],
                 $songdata['rating'],
+                $songdata['user_id'],
                 date('Y-m-d H:i:s')
             ]
         );
@@ -86,6 +91,11 @@ class cls_Music {
         if (empty($songdata['id']) || empty($songdata['title']) || 
             empty($songdata['artist']) || empty($songdata['genre']) || 
             empty($songdata['review']) || empty($songdata['rating'])) {
+            return false;
+        }
+        
+        // Verificar que el usuario tenga permisos para editar esta canción
+        if (!$this->can_user_edit_song($songdata['id'], $songdata['user_id'])) {
             return false;
         }
         
@@ -107,11 +117,38 @@ class cls_Music {
     }
     
     /**
+     * Verifica si un usuario puede editar una canción
+     * @param int $song_id ID de la canción
+     * @param int $user_id ID del usuario
+     * @return bool True si el usuario puede editar la canción, false en caso contrario
+     */
+    public function can_user_edit_song(int $song_id, int $user_id): bool {
+        $result = $this->data_provide->sql_execute_prepared(
+            "SELECT 1 FROM tbl_songs WHERE id = ? AND user_id = ?",
+            "ii",
+            [$song_id, $user_id]
+        );
+        
+        if ($result === false) {
+            return false;
+        }
+        
+        $row = $this->data_provide->sql_get_fetchassoc($result);
+        return $row !== null;
+    }
+    
+    /**
      * Elimina una canción por su ID
      * @param int $id ID de la canción a eliminar
+     * @param int $user_id ID del usuario que intenta eliminar
      * @return bool True si se eliminó correctamente, false en caso contrario
      */
-    public function delete_song(int $id): bool {
+    public function delete_song(int $id, int $user_id): bool {
+        // Verificar que el usuario tenga permisos para eliminar esta canción
+        if (!$this->can_user_edit_song($id, $user_id)) {
+            return false;
+        }
+        
         // Usando consulta preparada para mayor seguridad
         return $this->data_provide->sql_execute_prepared_dml(
             "DELETE FROM tbl_songs WHERE id = ?",
@@ -129,10 +166,12 @@ class cls_Music {
         $searchTerm = "%{$searchTerm}%";
         
         $result = $this->data_provide->sql_execute_prepared(
-            "SELECT id, title, artist, genre, review, rating, created_at 
-             FROM tbl_songs 
-             WHERE title LIKE ? OR artist LIKE ? OR genre LIKE ?
-             ORDER BY id DESC",
+            "SELECT s.id, s.title, s.artist, s.genre, s.review, s.rating, s.created_at, 
+                    u.id as user_id, u.username, u.full_name, u.profile_image
+             FROM tbl_songs s
+             JOIN tbl_users u ON s.user_id = u.id
+             WHERE s.title LIKE ? OR s.artist LIKE ? OR s.genre LIKE ?
+             ORDER BY s.id DESC",
             "sss",
             [$searchTerm, $searchTerm, $searchTerm]
         );

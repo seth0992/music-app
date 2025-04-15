@@ -10,8 +10,8 @@ CREATE TABLE tbl_songs (
     review TEXT NOT NULL,
     rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
     created_at DATETIME NOT NULL,
-    user_id INT NOT NULL,
-);
+    user_id INT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
 
 
 -- Crear tabla de usuarios
@@ -23,7 +23,7 @@ CREATE TABLE tbl_users (
     email VARCHAR(100) NOT NULL,
     profile_image VARCHAR(255) DEFAULT 'default_profile.jpg',
     created_at DATETIME NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
 
 -- Añadir usuario por defecto (password: 123456 - hash MD5)
 INSERT INTO tbl_users (username, password, full_name, email, profile_image, created_at) 
@@ -35,6 +35,3 @@ ALTER TABLE tbl_songs
 ADD CONSTRAINT fk_songs_users
 FOREIGN KEY (user_id) REFERENCES tbl_users(id)
 ON DELETE CASCADE ON UPDATE CASCADE;
-
--- Actualizar las canciones existentes para asignarlas al usuario administrador
-UPDATE tbl_songs SET user_id = 1;

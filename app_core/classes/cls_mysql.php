@@ -2,10 +2,10 @@
 class cls_Mysql {
     private ?mysqli $conn = null;
   
-    private string $serverName = "localhost";
-    private string $dataBase = "bd_musichub";
-    private string $userName = "root";
-    private string $password = "";  
+    private string $serverName = "sql113.infinityfree.com";
+    private string $dataBase = "if0_38750830_bd_musichub";
+    private string $userName = "if0_38750830";
+    private string $password = "q3hqPW8hqDY";  
     
     public function __construct() {}
     

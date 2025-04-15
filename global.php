@@ -1,6 +1,6 @@
 <?php
 // Variables que definen el nombre actual del hosting
-$myhost = "http://localhost";
+$myhost = "http://music-app-php.infinityfreeapp.com";
 $myproject = "music-app";
 $mysite = $myhost . "/" . $myproject;
 date_default_timezone_set('America/Tegucigalpa');
@@ -8,11 +8,16 @@ date_default_timezone_set('America/Tegucigalpa');
 // Variables estáticas que definen las rutas absolutas del proyecto
 define('__ROOT__', $_SERVER["DOCUMENT_ROOT"]);
 define('__SITE_PATH', $mysite);
+
 define('__CLS_PATH', __ROOT__ . "/" . $myproject . "/app_core/classes/");
 define('__CTR_PATH', __ROOT__ . "/" . $myproject . "/app_core/controllers/");
 define('__VWS_PATH', __ROOT__ . "/" . $myproject . "/app_core/views/");
 define('__VWS_HOST_PATH', $mysite . "/app_core/views/");
 define('__CTR_HOST_PATH', $mysite . "/app_core/controllers/");
+
+define('__RSC_HOST_PATH', $mysite . "/app_core/resources/"); 
+define('__RSC_PHO_HOST_PATH', $mysite . "/app_core/resources/photos/"); 
+
 define('__JS_PATH', $mysite . "/app_design/js/");
 define('__CSS_PATH', $mysite . "/app_design/css/");
 define('__IMG_PATH', $mysite . "/app_design/img/");
